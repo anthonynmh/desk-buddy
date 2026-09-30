@@ -8,7 +8,7 @@ enum NetworkField { WIFI_NAME, WIFI_PASSWORD, PUBLISHER_HOST, PAIRING_KEY, PUBLI
 enum NetworkStatus { NETWORK_UNCONFIGURED, NETWORK_CONNECTING, NETWORK_ONLINE, NETWORK_ERROR };
 struct NetworkUi {
     bool open = false, saveRequested = false, forgetRequested = false;
-    bool lowerCase = false, symbols = false;
+    bool lowerCase = false, symbols = false, moreSymbols = false;
     NetworkField field = WIFI_NAME;
     NetworkStatus status = NETWORK_UNCONFIGURED;
     bool publisherOnline = false;
@@ -50,14 +50,18 @@ struct NetworkUi {
         static const char *upper = "QWERTYUIOPASDFGHJKLZXCVBNM";
         static const char *lower = "qwertyuiopasdfghjklzxcvbnm";
         static const char *symbol = "1234567890!@#$%^&*()[]{}_/";
-        return symbols ? symbol[index] : (lowerCase ? lower[index] : upper[index]);
+        static const char *more = "+=:;,'\"?<>\\|~`(){}[]!@#$%^";
+        return symbols ? (moreSymbols ? more[index] : symbol[index]) :
+                         (lowerCase ? lower[index] : upper[index]);
     }
     void nextKeyboard() {
-        if (symbols) { symbols = false; lowerCase = true; }
-        else if (lowerCase) lowerCase = false;
+        if (symbols && moreSymbols) { symbols = false; moreSymbols = false; lowerCase = false; }
+        else if (symbols) { symbols = false; lowerCase = true; }
+        else if (lowerCase) { lowerCase = false; symbols = true; moreSymbols = true; }
         else symbols = true;
     }
-    const char *keyboardName() const { return symbols ? "123" : (lowerCase ? "abc" : "ABC"); }
+    const char *keyboardName() const { return symbols ? (moreSymbols ? "#+=" : "123") :
+                                                 (lowerCase ? "abc" : "ABC"); }
     bool ready() const { return ssid[0] && host[0] && key[0] && port[0]; }
     static uint16_t portNumber(const char *text) {
         uint32_t value = 0;

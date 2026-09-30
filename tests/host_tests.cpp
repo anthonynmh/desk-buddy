@@ -167,6 +167,9 @@ static void network_setup() {
     assert(ui.state.network.lowerCase && !ui.state.network.symbols);
     ui.state.network.append('a');
     assert(strcmp(ui.state.network.ssid, "Q1a") == 0);
+    ui.state.network.nextKeyboard();
+    assert(ui.state.network.symbols && ui.state.network.moreSymbols &&
+           ui.state.network.keyLabel(0) == '+');
     assert(NetworkUi::portNumber("8791") == 8791 && !NetworkUi::portNumber("0") &&
            !NetworkUi::portNumber("70000") && !NetworkUi::portNumber("8x"));
     strcpy(ui.state.network.host, "192.168.1.9");

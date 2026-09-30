@@ -38,8 +38,8 @@ for later computer and application events.
    `192.168.1.25`. Do not use a Bluetooth, VPN, `127.0.0.1`, or IPv6 address.
 5. On Pip, tap **SET UP WI-FI** in the top-right corner. Enter the Wi-Fi name,
    Wi-Fi password, publisher IPv4 address, pairing key, and port `8791`. Tap
-   **Save + connect**. The keyboard cycles `ABC` → `123` → `abc`; it also has
-   space, period, dash, and delete.
+   **Save + connect**. The keyboard cycles `ABC` → `123` → `abc` → `#+=`;
+   it also has space, period, dash, and delete.
 6. If Windows Defender Firewall asks, allow the publisher on **Private**
    networks. If no prompt appears, run the installed publisher once in a visible
    PowerShell window, then allow it:
