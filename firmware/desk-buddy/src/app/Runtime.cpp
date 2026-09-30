@@ -4,6 +4,7 @@
 #include "Runtime.h"
 #include "../hardware/rgb_lcd_port.h"
 #include "../hardware/gt911.h"
+#include "../hardware/WifiLink.h"
 #include "../companion/Interaction.h"
 #include "../graphics/Scene.h"
 #include "../graphics/Mascot.h"
@@ -13,7 +14,9 @@ static esp_lcd_panel_handle_t panel = nullptr;
 static uint16_t *actor = nullptr, *strip = nullptr;
 static pip::Interaction ui;
 static pip::MediaLink mediaLink;
+static WifiLink wifi;
 static bool musicDirty = false;
+static bool networkWasOpen = false;
 static uint32_t lastMusicDraw = 0;
 static uint32_t lastTouch = 0, lastFrame = 0, lastReport = 0, frames = 0;
 static uint64_t drawUs = 0, submitUs = 0;
@@ -39,6 +42,12 @@ static void drawRegion(int x, int y, int w, int h) {
     }
 }
 static void controls() {
+    if (ui.state.network.open || networkWasOpen) {
+        drawRegion(0, 0, 1024, 600);
+        networkWasOpen = ui.state.network.open;
+        ui.dirty = false;
+        return;
+    }
     drawRegion(56, 124, 540, 28);
     drawRegion(56, 463, 540, 35);
     for (int i = 0; i < 4; i++) {
@@ -48,6 +57,7 @@ static void controls() {
     ui.dirty = false;
 }
 static void frame(uint32_t now) {
+    if (ui.state.network.open) return;
     uint32_t start = micros();
     pip::Canvas c(actor, pip::PW, pip::PH, pip::PX, pip::PY);
     pip::mascot(c, ui.state, now);
@@ -88,16 +98,14 @@ void begin() {
     lastReport = lastFrame = millis();
     frames = 0;
     drawUs = submitUs = 0;
+    wifi.begin(ui.state.network);
     Serial.println("Pip is ready. Tap, brush, or choose a mood.");
 }
 void update() {
     uint32_t now = millis();
-    // Bound serial work so a noisy host cannot starve touch or animation.
-    for (int count = 0; count < 384 && Serial.available(); ++count) {
-        if (mediaLink.feed(char(Serial.read()), ui.state.media, now)) {
-            musicDirty = true;
-            ui.dirty = true;
-        }
+    if (wifi.update(ui.state.network, mediaLink, ui.state.media, ui.command, now)) {
+        musicDirty = true;
+        ui.dirty = true;
     }
     if (mediaLink.expire(ui.state.media, now)) {
         musicDirty = true;
@@ -107,10 +115,6 @@ void update() {
         lastTouch = now;
         touch_gt911_point_t p = touch_gt911_read_point(1);
         ui.sample(p.cnt > 0, p.x[0], p.y[0], now);
-        if (ui.command[0]) {
-            Serial.println(ui.command);
-            ui.command[0] = 0;
-        }
     }
     if ((musicDirty || ui.seeking || ui.state.media.playing) &&
         uint32_t(now - lastMusicDraw) >= 200) {
