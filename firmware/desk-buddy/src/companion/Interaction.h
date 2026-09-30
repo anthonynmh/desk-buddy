@@ -12,6 +12,28 @@ struct Interaction {
     bool seeking = false;
     uint32_t seekToken = 0, seekPosition = 0;
     char command[80] = {};
+    void networkPress(int x, int y, uint32_t now) {
+        NetworkUi &network = state.network;
+        for (int i = 0; i < 5; ++i)
+            if (networkFields[i].contains(x, y)) { network.select((NetworkField)i); return; }
+        if (networkClose.contains(x, y)) { network.open = false; dirty = true; return; }
+        if (networkSave.contains(x, y)) {
+            if (network.ready() && NetworkUi::portNumber(network.port)) {
+                network.saveRequested = true; network.status = NETWORK_CONNECTING; network.changedAt = now;
+            }
+            dirty = true; return;
+        }
+        if (networkForget.contains(x, y)) { network.forgetRequested = true; dirty = true; return; }
+        static const char *keys = "QWERTYUIOPASDFGHJKLZXCVBNM";
+        for (int i = 0; i < 26; ++i)
+            if (networkKeyBox(i).contains(x, y)) { network.append(keys[i]); dirty = true; return; }
+        if (networkSpace.contains(x, y)) network.append(' ');
+        else if (networkBack.contains(x, y)) network.erase();
+        else if (networkDot.contains(x, y)) network.append('.');
+        else if (networkDash.contains(x, y)) network.append('-');
+        else return;
+        dirty = true;
+    }
     void updateSeek(int x) {
         int offset = imax(0, imin(seekBar.w - 1, x - seekBar.x));
         seekPosition = uint32_t(uint64_t(offset) * state.media.duration / (seekBar.w - 1));
@@ -66,6 +88,17 @@ struct Interaction {
             buttonGesture = petted = false;
             lastX = x;
             lastY = y;
+            if (state.network.open) {
+                buttonGesture = true;
+                networkPress(x, y, now);
+                return;
+            }
+            if (networkButton.contains(x, y)) {
+                state.network.open = true;
+                buttonGesture = true;
+                dirty = true;
+                return;
+            }
             if (seekBar.contains(x, y)) {
                 buttonGesture = true;
                 seeking = state.media.connected && state.media.canSeek;

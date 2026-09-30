@@ -3,6 +3,7 @@
 #include "Shapes.h"
 #include "Layout.h"
 #include "Music.h"
+#include "Network.h"
 #include "../companion/State.h"
 
 namespace pip {
@@ -13,9 +14,10 @@ inline void scene(Canvas &c, const State &s, uint32_t now = 0) {
     c.ellipse(54, 44, 2, 3, MINT);
     c.text(72, 17, "Pip", fontTitle, INK);
     c.text(173, 32, "YOUR DESK COMPANION", fontSmall, MUTED);
-    c.round(816, 30, 176, 34, 17, STAGE);
-    c.ellipse(835, 47, 4, 4, rgb(73, 146, 107));
-    c.text(849, 35, "HERE WITH YOU", fontSmall, INK);
+    c.round(networkButton.x, networkButton.y, networkButton.w, networkButton.h, 17, STAGE);
+    uint16_t networkColor = s.network.status == NETWORK_ONLINE ? rgb(73, 146, 107) : PEACH;
+    c.ellipse(835, 47, 4, 4, networkColor);
+    c.text(849, 35, s.network.status == NETWORK_ONLINE ? "WI-FI SETTINGS" : "SET UP WI-FI", fontSmall, INK);
     c.round(32, 108, 584, 424, 26, STAGE);
     c.text(58, 128, s.media.playing ? "DANCING WITH YOUR MUSIC" : modes[s.mode], fontSmall, MUTED);
     sparkle(c, 116, 227, 9, rgb(180, 197, 176));
@@ -35,5 +37,6 @@ inline void scene(Canvas &c, const State &s, uint32_t now = 0) {
     }
     c.text(34, 561, "A calm little corner of your workday.", fontSmall, MUTED);
     c.text(795, 561, "Made for tiny breaks.", fontSmall, MUTED);
+    if (s.network.open) networkSetup(c, s.network);
 }
 } // namespace pip
