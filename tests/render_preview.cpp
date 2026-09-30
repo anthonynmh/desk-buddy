@@ -5,7 +5,7 @@
 #include "../firmware/desk-buddy/src/graphics/Mascot.h"
 
 int main(int argc, char **argv) {
-    if (argc != 2) return 1;
+    if (argc < 2 || argc > 3) return 1;
     pip::State state;
     state.media.connected = state.media.available = state.media.playing = true;
     state.media.canSeek = state.media.canToggle = true;
@@ -16,8 +16,16 @@ int main(int argc, char **argv) {
     strcpy(state.media.album, "Songs for a Slow Afternoon");
     std::vector<uint16_t> pixels(1024 * 600);
     pip::Canvas canvas(pixels.data(), 1024, 600);
+    if (argc == 3) {
+        state.network.open = true;
+        state.network.addNetwork("Home Wi-Fi", -40, true);
+        state.network.addNetwork("Guest", -68, false);
+        state.network.addNetwork("Neighbour", -80, true);
+        state.network.dropdown = strcmp(argv[2], "dropdown") == 0;
+        state.network.chooseNetwork(state.network.dropdown ? -1 : 0);
+    }
     pip::scene(canvas, state, 900);
-    pip::mascot(canvas, state, 900);
+    if (!state.network.open) pip::mascot(canvas, state, 900);
     FILE *file = fopen(argv[1], "wb");
     if (!file) return 1;
     fprintf(file, "P6\n1024 600\n255\n");

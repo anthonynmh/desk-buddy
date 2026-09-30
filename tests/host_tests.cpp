@@ -152,21 +152,27 @@ static void network_setup() {
     Interaction ui;
     ui.sample(true, networkButton.x + 1, networkButton.y + 1, 100);
     assert(ui.state.network.open && ui.buttonGesture);
+    assert(ui.state.network.scanRequested);
+    ui.state.network.addNetwork("Guest", -80, false);
+    ui.state.network.addNetwork("Home", -40, true);
+    ui.state.network.addNetwork("Home", -60, true);
+    assert(ui.state.network.networkCount == 2);
     ui.sample(false, 0, 0, 220);
     ui.sample(true, networkFields[0].x + 1, networkFields[0].y + 1, 300);
     ui.sample(false, 0, 0, 420);
-    ui.sample(true, networkKeyBox(0).x + 1, networkKeyBox(0).y + 1, 500);
-    assert(strcmp(ui.state.network.ssid, "Q") == 0);
+    assert(ui.state.network.dropdown);
+    ui.sample(true, networkRow(0).x + 1, networkRow(0).y + 1, 500);
+    assert(strcmp(ui.state.network.ssid, "Home") == 0 && !ui.state.network.dropdown);
     ui.sample(false, 0, 0, 620);
     ui.sample(true, networkKeyboard.x + 1, networkKeyboard.y + 1, 700);
     assert(ui.state.network.symbols);
     ui.sample(false, 0, 0, 820);
     ui.sample(true, networkKeyBox(0).x + 1, networkKeyBox(0).y + 1, 900);
-    assert(strcmp(ui.state.network.ssid, "Q1") == 0);
+    assert(strcmp(ui.state.network.password, "1") == 0);
     ui.state.network.nextKeyboard();
     assert(ui.state.network.lowerCase && !ui.state.network.symbols);
     ui.state.network.append('a');
-    assert(strcmp(ui.state.network.ssid, "Q1a") == 0);
+    assert(strcmp(ui.state.network.password, "1a") == 0);
     ui.state.network.nextKeyboard();
     assert(ui.state.network.symbols && ui.state.network.moreSymbols &&
            ui.state.network.keyLabel(0) == '+');
@@ -174,21 +180,54 @@ static void network_setup() {
            !NetworkUi::portNumber("70000") && !NetworkUi::portNumber("8x"));
     strcpy(ui.state.network.host, "192.168.1.9");
     strcpy(ui.state.network.key, "ABCDEFGHIJKLMNOP");
+    strcpy(ui.state.network.password, "password");
     ui.state.network.select(PUBLISHER_PORT);
     ui.sample(false, 0, 0, 1011);
     ui.sample(true, networkSave.x + 1, networkSave.y + 1, 1100);
-    assert(ui.state.network.saveRequested && ui.state.network.status == NETWORK_CONNECTING);
+    assert(ui.state.network.saveRequested);
     ui.sample(false, 0, 0, 1211);
     ui.sample(true, networkForget.x + 1, networkForget.y + 1, 1300);
     assert(ui.state.network.forgetRequested);
+    ui.state.network.saveRequested = false;
+    ui.state.network.host[0] = ui.state.network.key[0] = 0;
+    assert(ui.state.network.ready() && !ui.state.network.publisherReady());
+    ui.sample(false, 0, 0, 1420);
+    ui.sample(true, networkClose.x + 1, networkClose.y + 1, 1500);
+    ui.sample(true, networkClose.x + 1, networkClose.y + 1, 1516);
+    assert(!ui.state.network.open); // Holding Back does not reopen settings.
+    ui.state.network.chooseNetwork(1);
+    assert(!ui.state.network.secured && !ui.state.network.password[0] && ui.state.network.ready());
+    for (int i = 0; i < 20; ++i) {
+        char name[16]; snprintf(name, sizeof(name), "Network%d", i);
+        ui.state.network.addNetwork(name, -20 - i, true);
+    }
+    assert(ui.state.network.networkCount == 12);
+    for (int i = 1; i < 12; ++i)
+        assert(ui.state.network.networks[i - 1].signal >= ui.state.network.networks[i].signal);
+    for (int mode = 0; mode < 4; ++mode) {
+        for (int key = 0; key < 26; ++key) assert(ui.state.network.keyLabel(key) >= 32);
+        ui.state.network.nextKeyboard();
+    }
 
     State state;
     state.network.open = true;
     strcpy(state.network.ssid, "HomeWiFi");
     std::vector<uint16_t> full(1024 * 600 + 2, 0xBEEF);
-    Canvas c(full.data() + 1, 1024, 600);
-    scene(c, state, 0);
-    assert(full.front() == 0xBEEF && full.back() == 0xBEEF);
+    state.network.addNetwork("HomeWiFi", -45, true);
+    for (int view = 0; view < 4; ++view) {
+        state.network.dropdown = view == 1 || view == 2;
+        state.network.scanning = view == 2;
+        state.network.publisherPage = view == 3;
+        Canvas c(full.data() + 1, 1024, 600);
+        scene(c, state, 0);
+        assert(full.front() == 0xBEEF && full.back() == 0xBEEF);
+        std::vector<uint16_t> strips(1024 * 600 + 2, 0xBEEF);
+        for (int y = 0; y < 600; y += 24) {
+            Canvas strip(strips.data() + 1 + y * 1024, 1024, 24, 0, y);
+            scene(strip, state, 0);
+        }
+        assert(strips == full);
+    }
 }
 
 int main() {

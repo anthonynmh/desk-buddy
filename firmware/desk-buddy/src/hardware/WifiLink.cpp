@@ -41,6 +41,7 @@ bool openRequest(HTTPClient &http, WiFiClient &client, const pip::NetworkUi &net
 } // namespace
 
 void WifiLink::begin(pip::NetworkUi &network) {
+    WiFi.mode(WIFI_STA);
     Preferences prefs;
     if (!prefs.begin("desk-buddy", true)) return;
     load(prefs, "ssid", network.ssid, sizeof(network.ssid));
@@ -50,8 +51,9 @@ void WifiLink::begin(pip::NetworkUi &network) {
     load(prefs, "port", network.port, sizeof(network.port));
     prefs.end();
     if (!network.port[0]) strcpy(network.port, "8791");
-    WiFi.mode(WIFI_STA);
-    if (network.ready() && pip::NetworkUi::portNumber(network.port)) connect(network, millis());
+    network.secured = network.password[0] != 0;
+    saved_ = network;
+    if (network.ready()) connect(network, millis());
 }
 
 void WifiLink::connect(pip::NetworkUi &network, uint32_t now) {
@@ -60,14 +62,15 @@ void WifiLink::connect(pip::NetworkUi &network, uint32_t now) {
     network.changedAt = now;
     lastAttempt_ = now;
     WiFi.disconnect(false, false);
-    WiFi.begin(network.ssid, network.password);
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(saved_.ssid, saved_.password);
 }
 
 bool WifiLink::poll(pip::NetworkUi &network, pip::MediaLink &mediaLink, pip::Media &media,
                     uint32_t now) {
     WiFiClient client;
     HTTPClient http;
-    if (!openRequest(http, client, network, "/v1/state")) return false;
+    if (!openRequest(http, client, saved_, "/v1/state")) return false;
     int code = http.GET();
     bool accepted = code == HTTP_CODE_OK && receive(http, mediaLink, media, now);
     http.end();
@@ -95,26 +98,63 @@ bool WifiLink::update(pip::NetworkUi &network, pip::MediaLink &mediaLink, pip::M
         Preferences prefs;
         if (prefs.begin("desk-buddy", false)) { prefs.clear(); prefs.end(); }
         network = pip::NetworkUi();
+        network.open = true;
+        saved_ = pip::NetworkUi();
+        media = pip::Media(); commandValue[0] = 0;
+        WiFi.scanDelete();
         WiFi.disconnect(true, false);
         return true;
+    }
+    if (network.scanRequested && !network.scanning && network.status != pip::NETWORK_CONNECTING) {
+        network.scanRequested = false;
+        network.scanFailed = false;
+        network.networkCount = network.networkPage = 0;
+        WiFi.mode(WIFI_STA);
+        WiFi.scanDelete();
+        network.scanning = true;
+        scanStarted_ = now;
+        if (WiFi.scanNetworks(true) == WIFI_SCAN_FAILED) {
+            network.scanning = false; network.scanFailed = true;
+        }
+        changed = true;
+    }
+    if (network.scanning) {
+        int count = WiFi.scanComplete();
+        if (count != WIFI_SCAN_RUNNING || uint32_t(now - scanStarted_) > 15000) {
+            for (int i = 0; i < count && i < 256; ++i)
+                network.addNetwork(WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.encryptionType(i) != WIFI_AUTH_OPEN);
+            network.scanning = false;
+            network.scanFailed = count < 0;
+            WiFi.scanDelete();
+            changed = true;
+        }
+        return changed;
     }
     if (network.saveRequested) {
         network.saveRequested = false;
         store(network);
-        connect(network, now);
+        bool wifiChanged = strcmp(saved_.ssid, network.ssid) || strcmp(saved_.password, network.password);
+        saved_ = network;
+        if (wifiChanged || WiFi.status() != WL_CONNECTED) connect(network, now);
         changed = true;
     }
-    if (!network.ready() || !pip::NetworkUi::portNumber(network.port)) return changed;
+    if (!saved_.ready()) return changed;
     if (WiFi.status() != WL_CONNECTED) {
+        network.publisherOnline = false;
+        commandValue[0] = 0;
+        if (network.status == pip::NETWORK_ONLINE) {
+            network.status = pip::NETWORK_ERROR; changed = true;
+        }
         if (network.status == pip::NETWORK_CONNECTING && uint32_t(now - network.changedAt) > 15000) {
             network.status = pip::NETWORK_ERROR;
             changed = true;
         }
-        if (uint32_t(now - lastAttempt_) > 30000) connect(network, now);
+        if (!network.open && uint32_t(now - lastAttempt_) > 30000) { connect(network, now); changed = true; }
         return changed;
     }
     if (network.status != pip::NETWORK_ONLINE) { network.status = pip::NETWORK_ONLINE; changed = true; }
-    command(network, commandValue);
+    if (network.open || !saved_.publisherReady()) return changed;
+    command(saved_, commandValue);
     if (uint32_t(now - lastPoll_) >= 1000) {
         lastPoll_ = now;
         bool before = network.publisherOnline;

@@ -12,14 +12,43 @@ struct Interaction {
     bool seeking = false;
     uint32_t seekToken = 0, seekPosition = 0;
     char command[80] = {};
-    void networkPress(int x, int y, uint32_t now) {
+    void networkPress(int x, int y, uint32_t) {
         NetworkUi &network = state.network;
+        if (networkClose.contains(x, y)) {
+            if (network.dropdown) network.dropdown = false;
+            else if (network.publisherPage) { network.publisherPage = false; network.field = WIFI_PASSWORD; }
+            else network.open = false;
+            dirty = true; return;
+        }
+        if (network.dropdown) {
+            if (!network.scanning) {
+                for (int i = 0; i < 5; ++i)
+                    if (networkRow(i).contains(x, y)) network.chooseNetwork(network.networkPage * 5 + i);
+                if (networkPrev.contains(x, y) && network.networkPage > 0) --network.networkPage;
+                if (networkNext.contains(x, y) && (network.networkPage + 1) * 5 < network.networkCount) ++network.networkPage;
+            }
+            dirty = true; return;
+        }
+        if (!network.publisherPage && networkFields[0].contains(x, y)) {
+            network.dropdown = true;
+            if (!network.networkCount && !network.scanning) network.scanRequested = true;
+            dirty = true; return;
+        }
+        if (!network.publisherPage && networkRescan.contains(x, y)) {
+            network.scanRequested = !network.scanning; network.dropdown = true;
+            dirty = true; return;
+        }
+        if (!network.publisherPage && networkPublisher.contains(x, y)) {
+            network.publisherPage = true; network.field = PUBLISHER_HOST;
+            dirty = true; return;
+        }
         for (int i = 0; i < 5; ++i)
-            if (networkFields[i].contains(x, y)) { network.select((NetworkField)i); return; }
-        if (networkClose.contains(x, y)) { network.open = false; dirty = true; return; }
+            if ((network.publisherPage ? i >= 2 : i == 1) && networkFields[i].contains(x, y)) {
+                network.select((NetworkField)i); dirty = true; return;
+            }
         if (networkSave.contains(x, y)) {
-            if (network.ready() && NetworkUi::portNumber(network.port)) {
-                network.saveRequested = true; network.status = NETWORK_CONNECTING; network.changedAt = now;
+            if (!network.scanning && network.ready() && (!network.publisherPage || network.publisherReady())) {
+                network.saveRequested = true;
             }
             dirty = true; return;
         }
@@ -89,12 +118,16 @@ struct Interaction {
             lastX = x;
             lastY = y;
             if (state.network.open) {
+                lastSeen = now;
                 buttonGesture = true;
                 networkPress(x, y, now);
                 return;
             }
             if (networkButton.contains(x, y)) {
+                lastSeen = now;
                 state.network.open = true;
+                state.network.publisherPage = false;
+                state.network.scanRequested = !state.network.scanning;
                 buttonGesture = true;
                 dirty = true;
                 return;

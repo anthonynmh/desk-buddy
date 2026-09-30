@@ -49,6 +49,7 @@ static void controls() {
         return;
     }
     drawRegion(56, 124, 540, 28);
+    drawRegion(816, 30, 176, 34);
     drawRegion(56, 463, 540, 35);
     for (int i = 0; i < 4; i++) {
         const pip::Box &b = pip::buttons[i];
@@ -116,7 +117,7 @@ void update() {
         touch_gt911_point_t p = touch_gt911_read_point(1);
         ui.sample(p.cnt > 0, p.x[0], p.y[0], now);
     }
-    if ((musicDirty || ui.seeking || ui.state.media.playing) &&
+    if (!ui.state.network.open && (musicDirty || ui.seeking || ui.state.media.playing) &&
         uint32_t(now - lastMusicDraw) >= 200) {
         drawRegion(640, 108, 352, 356);
         lastMusicDraw = now;

@@ -11,6 +11,8 @@ class WifiLink {
     bool update(pip::NetworkUi &network, pip::MediaLink &mediaLink, pip::Media &media,
                 char *command, uint32_t now);
   private:
+    pip::NetworkUi saved_;
+    uint32_t scanStarted_ = 0;
     uint32_t lastAttempt_ = 0, lastPoll_ = 0;
     void connect(pip::NetworkUi &network, uint32_t now);
     bool poll(pip::NetworkUi &network, pip::MediaLink &mediaLink, pip::Media &media,

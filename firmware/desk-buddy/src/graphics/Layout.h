@@ -27,6 +27,9 @@ inline Box networkKeyBox(int index) {
 static const Box networkSpace = {308, 504, 300, 44}, networkBack = {620, 504, 116, 44},
                  networkDot = {748, 504, 72, 44}, networkDash = {832, 504, 72, 44};
 static const Box networkKeyboard = {916, 504, 72, 44};
+static const Box networkRescan = {72, 266, 152, 42}, networkPublisher = {244, 266, 212, 42};
+static const Box networkPrev = {92, 484, 140, 44}, networkNext = {248, 484, 140, 44};
+inline Box networkRow(int row) { return {92, 180 + row * 58, 840, 52}; }
 static const char *labels[] = {"Say hello", "Focus", "Play", "Nap"};
 static const char *modes[] = {"HAPPY TO BE HERE", "IN QUIET COMPANY", "A LITTLE HAPPY DANCE",
                               "RESTING MY PIXELS"};
