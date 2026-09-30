@@ -1,12 +1,12 @@
-# Pip — your little desk companion
+# Pip â€” your little desk companion
 
-A standalone animated, touchable mascot for the **Waveshare ESP32-S3-Touch-LCD-7B, 1024 × 600**.
+A standalone animated, touchable mascot for the **Waveshare ESP32-S3-Touch-LCD-7B, 1024 Ã— 600**.
 All display and touch drivers are included. No LVGL, Arduino_GFX, SD card, or extra example downloads are needed.
 
 ## Upload in Arduino IDE on Windows
 
-1. Extract the **entire ZIP**, then open `PipCompanion/PipCompanion.ino`.
-   Keep every `.h` and `.cpp` file beside the sketch. Open this project separately from your old FPS test.
+1. Extract the **entire ZIP**, then open `firmware/desk-buddy/desk-buddy.ino`.
+   Keep the complete `src/` tree beside the sketch. Arduino compiles it recursively. Open this project separately from your old FPS test.
 2. Keep your working **Waveshare ESP32S3 XIP** board selection. Check these Tools settings:
 
    | Setting | Value |
@@ -35,11 +35,11 @@ It does not communicate with or control your computer yet.
 - **Nap:** slower breathing, closed eyes, and floating Zs.
 - In its awake idle mood, Pip's eyes follow your finger.
 
-`Preview.png` was generated using the actual app renderer.
+[`Preview.png`](assets/Preview.png) was generated using the actual app renderer.
 
 ## Animation performance
 
-The screen is 1024 × 600, but normal animation repaints only a **320 × 302** region.
+The screen is 1024 Ã— 600, but normal animation repaints only a **320 Ã— 302** region.
 Labels and buttons update when interactions change them. Buffers are allocated once.
 Animation uses elapsed time and targets 25 application updates per second; actual performance
 on your hardware is not yet measured. This is not a claim about the LCD's physical refresh rate.
@@ -57,22 +57,24 @@ blank, so some tearing is possible.
 - **Upload cannot connect:** check the UART1 cable, physical switch, and COM port. If needed,
   hold BOOT, tap RESET, release BOOT, then upload. Reset afterward.
 - **Blank screen or touch failure:** press RESET and capture startup output at 115200 baud.
-- **Missing header:** extract the whole ZIP and keep the `.ino`, `.h`, and `.cpp` files together.
+- **Missing header:** extract the whole ZIP and keep the sketch and its complete `src/` tree together.
 - Changing Tools settings requires another upload to affect the firmware on the board.
 
 ## Customize
 
-Colors, layout, and character animation are in `PipGraphics.h`.
-Touch behavior and phrases are in `PipInteraction.h`.
-Hardware setup, partial updates, and performance logs are in `PipCompanion.ino`.
-`PipFonts.h` embeds the fonts, so no font files need to be copied onto the device.
+See the [project map](../README.md) and [architecture](architecture.md).
+Colors, layout, and animation are in `firmware/desk-buddy/src/graphics/`.
+Touch behavior and phrases are in `src/companion/Interaction.h`.
+Hardware setup, partial updates, and logs are in `src/app/Runtime.cpp`.
+`src/assets/Fonts.h` embeds the fonts; no external font files are needed.
+The `src/` paths are relative to `firmware/desk-buddy/`.
 
 ## Validation and limits
 
-The renderer and gesture state machine passed host C++ address/undefined-behavior checks.
-Checks cover the four moods, animation frames, partial/full rendering consistency, touch
-release debounce, petting, and waking from a nap. Leak checking was disabled because it is
-unsupported in the test environment. The animated preview uses this same renderer.
+The repository includes [host checks](../tests/README.md) for gesture behavior,
+buffer guards, and full/partial rendering consistency across all four moods.
+The original project reported address/undefined-behavior checks; sanitizer
+results must be verified again with a supporting toolchain after changes.
 
 A full ESP32 firmware build could not be completed in the available execution environment.
 The project has not been tested on a physical display here. Compile/upload it in your working
@@ -89,5 +91,5 @@ Modifications: one persistent RGB framebuffer; the unused legacy second-framebuf
 returns null; GT911 read results are initialized to zero and return early on I2C errors.
 The original 7B pins, 30 MHz pixel clock, timings, and touch initialization are retained.
 
-Original app code: MIT (`LICENSE-Pip.txt`). Hardware drivers: Apache-2.0
-(`LICENSE-Waveshare.txt` and source notices). Fonts: DejaVu/Bitstream (`LICENSE-Font.txt`).
+Original app code: MIT ([LICENSE-Pip.txt](../licenses/LICENSE-Pip.txt)). Hardware drivers: Apache-2.0
+([LICENSE-Waveshare.txt](../licenses/LICENSE-Waveshare.txt) and source notices). Fonts: DejaVu/Bitstream ([LICENSE-Font.txt](../licenses/LICENSE-Font.txt)).

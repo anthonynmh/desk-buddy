@@ -1,0 +1,13 @@
+# Local build output and scratch files
+/build/
+/work/
+/host-tests
+/host-tests.exe
+*.o
+*.obj
+*.elf
+*.bin
+*.map
+__pycache__/
+.DS_Store
+Thumbs.db
