@@ -9,6 +9,14 @@ struct Interaction {
     uint32_t lastSeen = 0, pressedAt = 0;
     int lastX = 0, lastY = 0;
     float travel = 0, targetX = 0, targetY = 0;
+    bool seeking = false;
+    uint32_t seekToken = 0, seekPosition = 0;
+    char command[80] = {};
+    void updateSeek(int x) {
+        int offset = imax(0, imin(seekBar.w - 1, x - seekBar.x));
+        seekPosition = uint32_t(uint64_t(offset) * state.media.duration / (seekBar.w - 1));
+        dirty = true;
+    }
     bool onPip(int x, int y) { return Box{190, 185, 280, 265}.contains(x, y); }
     void select(Mode m, uint32_t now) {
         state.mode = m;
@@ -24,6 +32,11 @@ struct Interaction {
     void release(uint32_t now) {
         if (!down)
             return;
+        if (seeking && state.media.connected && state.media.canSeek &&
+            seekToken == state.media.token)
+            snprintf(command, sizeof(command), "PIP_SEEK\t%lu\t%lu",
+                     (unsigned long)seekToken, (unsigned long)seekPosition);
+        seeking = false;
         if (!buttonGesture && !petted && travel < 35 && now - pressedAt < 900 &&
             onPip(lastX, lastY)) {
             if (state.mode == NAP)
@@ -53,6 +66,16 @@ struct Interaction {
             buttonGesture = petted = false;
             lastX = x;
             lastY = y;
+            if (seekBar.contains(x, y)) {
+                buttonGesture = true;
+                seeking = state.media.connected && state.media.canSeek;
+                seekToken = state.media.token;
+            } else if (playbackButton.contains(x, y)) {
+                buttonGesture = true;
+                if (state.media.connected && state.media.canToggle)
+                    snprintf(command, sizeof(command), "PIP_TOGGLE\t%lu",
+                             (unsigned long)state.media.token);
+            }
             for (int i = 0; i < 4; i++)
                 if (buttons[i].contains(x, y)) {
                     select((Mode)i, now);
@@ -61,6 +84,11 @@ struct Interaction {
                 }
         }
         lastSeen = now;
+        if (seeking) {
+            if (!state.media.connected || !state.media.canSeek || seekToken != state.media.token)
+                seeking = false;
+            else updateSeek(x);
+        }
         float dx = x - lastX, dy = y - lastY;
         travel += hypotf(dx, dy);
         lastX = x;
