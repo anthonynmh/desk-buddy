@@ -147,9 +147,51 @@ static void music() {
     assert(link.expire(ui.state.media, 4000)); // millis rollover.
 }
 
+static void network_setup() {
+    using namespace pip;
+    Interaction ui;
+    ui.sample(true, networkButton.x + 1, networkButton.y + 1, 100);
+    assert(ui.state.network.open && ui.buttonGesture);
+    ui.sample(false, 0, 0, 220);
+    ui.sample(true, networkFields[0].x + 1, networkFields[0].y + 1, 300);
+    ui.sample(false, 0, 0, 420);
+    ui.sample(true, networkKeyBox(0).x + 1, networkKeyBox(0).y + 1, 500);
+    assert(strcmp(ui.state.network.ssid, "Q") == 0);
+    ui.sample(false, 0, 0, 620);
+    ui.sample(true, networkKeyboard.x + 1, networkKeyboard.y + 1, 700);
+    assert(ui.state.network.symbols);
+    ui.sample(false, 0, 0, 820);
+    ui.sample(true, networkKeyBox(0).x + 1, networkKeyBox(0).y + 1, 900);
+    assert(strcmp(ui.state.network.ssid, "Q1") == 0);
+    ui.state.network.nextKeyboard();
+    assert(ui.state.network.lowerCase && !ui.state.network.symbols);
+    ui.state.network.append('a');
+    assert(strcmp(ui.state.network.ssid, "Q1a") == 0);
+    assert(NetworkUi::portNumber("8791") == 8791 && !NetworkUi::portNumber("0") &&
+           !NetworkUi::portNumber("70000") && !NetworkUi::portNumber("8x"));
+    strcpy(ui.state.network.host, "192.168.1.9");
+    strcpy(ui.state.network.key, "ABCDEFGHIJKLMNOP");
+    ui.state.network.select(PUBLISHER_PORT);
+    ui.sample(false, 0, 0, 1011);
+    ui.sample(true, networkSave.x + 1, networkSave.y + 1, 1100);
+    assert(ui.state.network.saveRequested && ui.state.network.status == NETWORK_CONNECTING);
+    ui.sample(false, 0, 0, 1211);
+    ui.sample(true, networkForget.x + 1, networkForget.y + 1, 1300);
+    assert(ui.state.network.forgetRequested);
+
+    State state;
+    state.network.open = true;
+    strcpy(state.network.ssid, "HomeWiFi");
+    std::vector<uint16_t> full(1024 * 600 + 2, 0xBEEF);
+    Canvas c(full.data() + 1, 1024, 600);
+    scene(c, state, 0);
+    assert(full.front() == 0xBEEF && full.back() == 0xBEEF);
+}
+
 int main() {
     gestures();
     music();
+    network_setup();
     rendering();
     std::puts("Gesture and full/partial rendering checks passed.");
 }

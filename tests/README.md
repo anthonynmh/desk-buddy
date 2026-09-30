@@ -31,11 +31,13 @@ guard pixels around the buffers. Assertions must remain enabled.
 
 Media checks cover malformed/oversized packets, numeric overflow, reconnect and
 timeout including clock rollover, seek capture and release debounce, clamping,
-track changes during a drag, and play/pause commands. Rendering includes connected,
-paused and playing states, long metadata and partial panel painting.
+track changes during a drag, and play/pause commands. Wi-Fi settings checks cover
+field selection, upper/lower/symbol keyboard modes, validation, save and forget.
+Rendering includes connected, paused and playing states, long metadata, the Wi-Fi
+setup view, and partial panel painting.
 
-Run `powershell.exe -NoProfile -File desktop/Start-DeskBuddy.ps1 -Check` on Windows
-to check WinRT access without opening a serial port or changing playback. Follow
+Run `powershell.exe -NoProfile -File desktop/Start-DeskBuddyPublisher.ps1 -Check`
+on Windows to check WinRT access without opening a network listener or changing playback. Follow
 [physical acceptance checks](../docs/computer.md) for end-to-end verification.
 
 To render a sample music screen for visual inspection, compile

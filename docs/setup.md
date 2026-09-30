@@ -23,8 +23,8 @@ All display and touch drivers are included. No LVGL, Arduino_GFX, SD card, or ex
 4. Click **Upload**. Press **RESET** once if it does not restart automatically.
 
 This replaces the existing demo or FPS test. Pip runs locally after upload and needs only power.
-For optional Spotify playback and touch controls, run the
-[Windows USB helper](computer.md) after upload.
+For optional Spotify playback and touch controls, use the touchscreen Wi-Fi
+settings and install the [Windows publisher](computer.md) after upload.
 
 ## Interact with Pip
 

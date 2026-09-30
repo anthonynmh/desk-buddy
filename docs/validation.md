@@ -1,5 +1,20 @@
 # Validation
 
+## Wi-Fi publisher integration on dev — 2026-10-01
+
+- Host C++11 checks passed for gestures, media protocol, touchscreen Wi-Fi setup
+  values and keyboard modes, setup rendering, and buffer guards.
+- The ESP32 firmware compiled using the installed Waveshare ESP32S3 XIP 3.1.1
+  package with OPI PSRAM, 16 MB flash, 240 MHz CPU, and USB CDC disabled. It
+  uses 1184706 bytes (90%) of program storage and 46524 bytes (14%) of static
+  global memory.
+- Windows publisher and installer PowerShell syntax passed. The publisher's
+  read-only check retrieved live Spotify title, artist, album, timeline, and
+  enabled seek/play controls.
+- Wi-Fi association, NVS persistence, local firewall access, publisher install,
+  publisher HTTP serving, and physical UI behavior remain to be verified on the
+  board and target LAN.
+
 ## Spotify integration on dev — 2026-09-30
 
 - Python structure checks passed.

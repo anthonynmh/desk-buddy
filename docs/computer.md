@@ -1,80 +1,90 @@
-# Spotify on your desk
+# Desk Buddy on Wi-Fi
 
-Pip can accompany music playing in the **Spotify Windows desktop app**.
-A small Windows PowerShell helper reads the local Windows media session and
-sends its current state over the board's existing UART1 USB connection.
-No Spotify developer account, cloud service, Wi-Fi credentials, or additional
-PowerShell modules are needed. The helper runs only while its terminal is open.
+Pip connects to your **2.4 GHz Wi-Fi** and polls a small Windows companion app
+on your local network. The app, **Desk Buddy Publisher**, reads Spotify's
+Windows media session and accepts Pip's play/pause and seek requests. Pip can
+then stay powered from any USB supply; UART1 and a COM port are only needed for
+firmware upload and diagnostics.
 
-## Run
+The publisher is necessary. An ESP32 cannot see which Windows apps are running
+or read Spotify playback by itself. This first version publishes Spotify state,
+metadata, a connection heartbeat, and playback controls. It is the foundation
+for later computer and application events.
 
-1. Build and upload the firmware using [the existing board setup](setup.md).
-2. Leave the data cable and physical UART switch on UART1. Close Arduino Serial
-   Monitor: the helper needs exclusive access to that COM port.
-3. Open **Windows PowerShell 5.1** in the repository root and run:
+## One-time setup
+
+1. Upload the Wi-Fi firmware using [the existing board setup](setup.md). You do
+   not need to leave the UART1 cable connected afterward.
+2. Choose a pairing key of 16–32 uppercase letters. For example,
+   `MINTYDESKBUDDYPALS`. Keep it private: Pip and the publisher must use the
+   exact same value.
+3. In Windows PowerShell, from the repository root, install the publisher for
+   your current user:
 
    ```powershell
-   powershell.exe -NoProfile -File .\desktop\Start-DeskBuddy.ps1 -Port COM3
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\desktop\Install-DeskBuddyPublisher.ps1 -PairingKey MINTYDESKBUDDYPALS
    ```
 
-   Replace COM3 with the board's current port. If Windows blocks a downloaded
-   script, review it and unblock that file using its Properties dialog.
-4. Open Spotify and play a song. Pip dances while playback is active, including
-   when the selected mood is Nap. Pausing returns Pip to the selected mood.
-5. Tap Play/Pause or drag the timeline; seeking is sent once after release.
-   Controls are enabled only when the media session reports support.
-6. Stop the helper with Ctrl+C before uploading again. When the helper stops or
-   USB disconnects, Pip returns to standalone operation within about four seconds.
+   The installer copies the publisher to `%LOCALAPPDATA%\DeskBuddy`, stores the
+   pairing key there, starts it, and registers the **Desk Buddy Publisher** task
+   to launch it when you sign in. It does not need administrator access.
+4. Find your Windows computer's **IPv4** address on the same Wi-Fi network:
 
-For a read-only Windows API check without opening the serial port:
+   ```powershell
+   ipconfig
+   ```
 
-```powershell
-powershell.exe -NoProfile -File .\desktop\Start-DeskBuddy.ps1 -Check
-```
+   Use the IPv4 address under your connected Wi-Fi or Ethernet adapter, such as
+   `192.168.1.25`. Do not use a Bluetooth, VPN, `127.0.0.1`, or IPv6 address.
+5. On Pip, tap **SET UP WI-FI** in the top-right corner. Enter the Wi-Fi name,
+   Wi-Fi password, publisher IPv4 address, pairing key, and port `8791`. Tap
+   **Save + connect**. The keyboard cycles `ABC` → `123` → `abc`; it also has
+   space, period, dash, and delete.
+6. If Windows Defender Firewall asks, allow the publisher on **Private**
+   networks. If no prompt appears, run the installed publisher once in a visible
+   PowerShell window, then allow it:
 
-## Behavior and limits
+   ```powershell
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File $env:LOCALAPPDATA\DeskBuddy\Start-DeskBuddyPublisher.ps1
+   ```
 
-- The panel shows title, artist, **album name**, progress, and playback status.
-  Cover artwork and volume control are not implemented. The slider seeks.
-- Dancing is a looping animation driven by playback state; it is not beat detection.
-- An open Spotify process without an exposed media session shows “Waiting for
-  Spotify.” Metadata and seeking depend on Spotify's Windows media integration.
-  The helper filters Spotify sessions; browser playback is outside this version.
-- Text is limited to 63 printable ASCII characters per field. Accented Latin
-  letters are simplified; unsupported characters become `?`. Long visible text
-  is shortened to fit. This follows the existing embedded font's character set.
-- Metadata is sent once per second; the board interpolates progress while playing.
-  Commands are requests: the next playback snapshot determines displayed state.
-  Declined requests produce a warning in the helper terminal.
-- Automatic reconnect handles temporary serial failures. If the COM port changes,
-  restart the helper with the new port. There is no activity history or foreground
-  app tracking in this first computer integration.
+   Leave that window open only for troubleshooting; the installed sign-in task
+   normally keeps the publisher running in the background.
+7. Start Spotify desktop playback. The music panel should show the song,
+   artist, album, progress, and active controls; Pip dances while Spotify plays.
 
-Windows API reference: [media sessions](https://learn.microsoft.com/en-us/uwp/api/windows.media.control.globalsystemmediatransportcontrolssession)
-and [supported playback controls](https://learn.microsoft.com/en-us/uwp/api/windows.media.control.globalsystemmediatransportcontrolssessionplaybackcontrols).
+If Pip says it cannot connect, confirm the board and computer are on the same
+LAN, the router does not isolate wireless clients, the IP/key match, and the
+publisher task is running. Reopen Wi‑Fi settings to correct any value or tap
+**Forget** to erase the saved settings from Pip.
 
-## Protocol
+## Controls and privacy
 
-115200 baud, newline-delimited ASCII, tab-separated fields:
+- The slider seeks after you release it. Play/Pause sends a request only when
+  Spotify reports that control as supported.
+- The publisher exposes `GET /v1/state` and `POST /v1/command` on port 8791.
+  Every request needs the pairing key in `X-Desk-Buddy-Key`; malformed and
+  oversized requests are rejected. The key provides local access control, but
+  the traffic is plain HTTP. Use a trusted private LAN, not a public network.
+- Wi-Fi name, password, publisher IP, key, and port are stored in the ESP32's
+  NVS storage. The publisher's key and port are stored in the current user's
+  `%LOCALAPPDATA%\DeskBuddy\publisher.json`.
+- The current publisher intentionally filters to the Spotify Windows media
+  session. It has no cloud account, Spotify developer token, telemetry, remote
+  service, or activity history. Browser Spotify and album artwork are outside
+  this release.
+- The publisher starts when you sign in. To remove it, run:
 
-```text
-PIP1 available playing canSeek canToggle token positionMs durationMs title artist album
-PIP_SEEK token positionMs
-PIP_TOGGLE token
-```
-
-Spaces above stand for tabs. Empty metadata fields still need separators.
-The helper changes the token when the session/song identity changes. A drag
-captured on an earlier token is cancelled. Unsigned numeric fields are bounded
-to 32 bits; boolean fields must be 0 or 1. The firmware rejects malformed or
-oversized lines, handles input in bounded chunks, and expires missing heartbeats.
-The helper ignores firmware logs sharing the serial link.
+  ```powershell
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\desktop\Uninstall-DeskBuddyPublisher.ps1
+  ```
 
 ## Physical acceptance checks
 
-Play/pause, seek forward/back, change song during a drag, close Spotify, stop the
-helper, unplug/reconnect USB, and restart the board. Check a song without seeking
-support, long/empty/non-ASCII metadata, and album availability. Check mood buttons,
-tap/wave, brush/hearts, waking from Nap, and return to Nap after pausing. Watch for
-touch lag, clipping, tearing, or stale text during playback. Host tests and a
-firmware build do not establish these physical results.
+Test initial Wi-Fi setup, wrong password, a changed IP/key, Wi-Fi loss and
+recovery, stopping/restarting the Windows publisher, Spotify paused/playing,
+seek forward/back, a song change during a drag, and a song where seeking is not
+available. Also check tap/wave, brushing, mood buttons, waking from Nap, and
+returning to the selected mood after playback pauses. Host tests and compilation
+cannot establish radio performance, firewall behavior, or touchscreen behavior
+on your hardware.
