@@ -3,6 +3,20 @@
 A standalone animated, touchable mascot for the **Waveshare ESP32-S3-Touch-LCD-7B, 1024 Ã— 600**.
 All display and touch drivers are included. No LVGL, Arduino_GFX, SD card, or extra example downloads are needed.
 
+## Windows board setup
+
+Windows is easier for this particular setup. Waveshare’s offline ESP32 XIP
+installation guide uses Windows paths, so you can follow it directly. Your
+MacBook can still program the board; the guide is simply easier to follow on
+Windows. See the [Waveshare ESP32 XIP 3.1.1 installation guide](https://www.waveshare.com/wiki/Esp32-XIP-3.1.1_Development_Board_Installation?utm_source=chatgpt.com).
+
+On the Windows PC:
+
+1. Install Arduino IDE.
+2. Follow Waveshare’s ESP32 XIP 3.1.1 board installation guide.
+3. Restart Arduino IDE. Under **Tools → Board**, choose **Waveshare ESP32S3 XIP**—not the 1.28-inch board.
+4. Connect the data cable to **UART1**, set the board’s UART switch to **UART1**, and choose the new port under **Tools → Port**.
+
 ## Upload in Arduino IDE on Windows
 
 1. Extract the **entire ZIP**, then open `firmware/desk-buddy/desk-buddy.ino`.
