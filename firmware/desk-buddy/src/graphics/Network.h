@@ -46,10 +46,9 @@ inline void networkSetup(Canvas &c, const NetworkUi &network) {
     c.centered(networkSave.x + networkSave.w / 2, 278, "Save + connect", fontSmall, INK);
     c.round(networkForget.x, networkForget.y, networkForget.w, networkForget.h, 12, STAGE);
     c.centered(networkForget.x + networkForget.w / 2, 278, "Forget", fontSmall, MUTED);
-    static const char *keys = "QWERTYUIOPASDFGHJKLZXCVBNM";
     for (int i = 0; i < 26; ++i) {
         Box b = networkKeyBox(i);
-        char label[] = {keys[i], 0};
+        char label[] = {network.keyLabel(i), 0};
         c.round(b.x, b.y, b.w, b.h, 11, WHITE);
         c.centered(b.x + b.w / 2, b.y + 12, label, fontSmall, INK);
     }
@@ -61,6 +60,8 @@ inline void networkSetup(Canvas &c, const NetworkUi &network) {
     c.centered(networkDot.x + networkDot.w / 2, 516, ".", fontBody, INK);
     c.round(networkDash.x, networkDash.y, networkDash.w, networkDash.h, 11, WHITE);
     c.centered(networkDash.x + networkDash.w / 2, 516, "-", fontBody, INK);
+    c.round(networkKeyboard.x, networkKeyboard.y, networkKeyboard.w, networkKeyboard.h, 11, STAGE);
+    c.centered(networkKeyboard.x + networkKeyboard.w / 2, 516, network.keyboardName(), fontSmall, INK);
     c.text(76, 573, "Use your computer's IPv4 address and the pairing key from the Desk Buddy Publisher installer.",
            fontSmall, MUTED);
 }

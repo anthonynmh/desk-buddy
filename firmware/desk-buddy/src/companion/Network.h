@@ -8,6 +8,7 @@ enum NetworkField { WIFI_NAME, WIFI_PASSWORD, PUBLISHER_HOST, PAIRING_KEY, PUBLI
 enum NetworkStatus { NETWORK_UNCONFIGURED, NETWORK_CONNECTING, NETWORK_ONLINE, NETWORK_ERROR };
 struct NetworkUi {
     bool open = false, saveRequested = false, forgetRequested = false;
+    bool lowerCase = false, symbols = false;
     NetworkField field = WIFI_NAME;
     NetworkStatus status = NETWORK_UNCONFIGURED;
     bool publisherOnline = false;
@@ -45,6 +46,18 @@ struct NetworkUi {
         if (length) text[length - 1] = 0;
     }
     void select(NetworkField next) { field = next; }
+    char keyLabel(int index) const {
+        static const char *upper = "QWERTYUIOPASDFGHJKLZXCVBNM";
+        static const char *lower = "qwertyuiopasdfghjklzxcvbnm";
+        static const char *symbol = "1234567890!@#$%^&*()[]{}_/";
+        return symbols ? symbol[index] : (lowerCase ? lower[index] : upper[index]);
+    }
+    void nextKeyboard() {
+        if (symbols) { symbols = false; lowerCase = true; }
+        else if (lowerCase) lowerCase = false;
+        else symbols = true;
+    }
+    const char *keyboardName() const { return symbols ? "123" : (lowerCase ? "abc" : "ABC"); }
     bool ready() const { return ssid[0] && host[0] && key[0] && port[0]; }
     static uint16_t portNumber(const char *text) {
         uint32_t value = 0;

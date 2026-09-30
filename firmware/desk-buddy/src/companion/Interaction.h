@@ -24,13 +24,13 @@ struct Interaction {
             dirty = true; return;
         }
         if (networkForget.contains(x, y)) { network.forgetRequested = true; dirty = true; return; }
-        static const char *keys = "QWERTYUIOPASDFGHJKLZXCVBNM";
         for (int i = 0; i < 26; ++i)
-            if (networkKeyBox(i).contains(x, y)) { network.append(keys[i]); dirty = true; return; }
+            if (networkKeyBox(i).contains(x, y)) { network.append(network.keyLabel(i)); dirty = true; return; }
         if (networkSpace.contains(x, y)) network.append(' ');
         else if (networkBack.contains(x, y)) network.erase();
         else if (networkDot.contains(x, y)) network.append('.');
         else if (networkDash.contains(x, y)) network.append('-');
+        else if (networkKeyboard.contains(x, y)) network.nextKeyboard();
         else return;
         dirty = true;
     }
