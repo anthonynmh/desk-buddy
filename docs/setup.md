@@ -23,7 +23,8 @@ All display and touch drivers are included. No LVGL, Arduino_GFX, SD card, or ex
 4. Click **Upload**. Press **RESET** once if it does not restart automatically.
 
 This replaces the existing demo or FPS test. Pip runs locally after upload and needs only power.
-It does not communicate with or control your computer yet.
+For optional Spotify playback and touch controls, run the
+[Windows USB helper](computer.md) after upload.
 
 ## Interact with Pip
 
@@ -76,8 +77,9 @@ buffer guards, and full/partial rendering consistency across all four moods.
 The original project reported address/undefined-behavior checks; sanitizer
 results must be verified again with a supporting toolchain after changes.
 
-A full ESP32 firmware build could not be completed in the available execution environment.
-The project has not been tested on a physical display here. Compile/upload it in your working
+The music integration compiles with the locally installed Waveshare ESP32S3 XIP
+3.1.1 package, OPI PSRAM, 16 MB flash, 240 MHz CPU, and USB CDC disabled.
+The project has not been tested on a physical display here. Upload it in your working
 Arduino XIP installation, then check the screen, touch response, and performance logs.
 
 ## Driver sources and licenses

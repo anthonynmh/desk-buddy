@@ -3,8 +3,10 @@
 A standalone touchscreen desk companion named **Pip**, built for the
 **Waveshare ESP32-S3-Touch-LCD-7B (1024 × 600)** using Arduino C++.
 Tap Pip to wave, stroke it for hearts, or choose Hello, Focus, Play, or Nap.
-It runs locally on the board and needs only power after upload. Computer
-integration is not implemented.
+It runs locally on the board and needs only power after upload. An optional
+Windows USB helper connects Spotify playback to Pip: dance while playing,
+show the song, artist and album name, and touch to seek or play/pause.
+See [computer connection](docs/computer.md) for setup and current limits.
 
 ![Pip preview](docs/assets/Preview.png)
 
@@ -44,6 +46,10 @@ in the outer `desk-buddy` directory.
 
 ## Where to make changes
 
+The project also includes `desktop/Start-DeskBuddy.ps1` (Windows media-to-USB
+helper), `src/companion/Media.h` (portable playback state and bounded protocol),
+and `src/graphics/Music.h` (music panel). Firmware paths are relative to the sketch.
+
 | Change | Start with |
 | --- | --- |
 | Tap, petting, wake-up behavior, phrases | `src/companion/Interaction.h` |
@@ -62,9 +68,9 @@ Normal animation redraws a 320 × 302 region, targeting 25 application updates
 per second. Controls redraw when their state changes. The framebuffer is not
 synchronized to vertical blank, so tearing is possible.
 
-Host tests exercise gestures and full/partial rendering. They do not validate
-ESP32 hardware. The full firmware build and physical display/touch behavior
-remain unverified in this environment; validate with your Arduino board setup.
+Host tests exercise gestures, media messages, and full/partial rendering.
+They do not validate ESP32 hardware. See [computer connection](docs/computer.md)
+for live playback and touchscreen checks.
 
 ## Licenses and provenance
 

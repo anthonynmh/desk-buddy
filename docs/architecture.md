@@ -9,6 +9,12 @@ touch coordinates → companion/Interaction → companion/State → graphics →
 
 ## Modules
 
+The optional computer flow is `desktop/Start-DeskBuddy.ps1` -> UART1 serial ->
+`companion/Media.h` -> state -> music panel and dance animation. Touch controls
+produce token-bound commands in the reverse direction. See [the protocol and
+setup](computer.md). The Windows helper owns all Windows API calls; portable
+companion and graphics headers have no OS or Arduino dependencies.
+
 ### app
 
 `Runtime.h` exposes `desk_buddy::begin()` and `desk_buddy::update()` to the
@@ -20,6 +26,12 @@ the backlight. Do not initialize I2C twice.
 The loop polls touch every 16 ms, updates the mascot at intervals of at least
 40 ms, and prints performance statistics every five seconds. Animation uses
 elapsed time. These are scheduling targets, not measured LCD refresh rates.
+
+Serial input is capped at 384 bytes per loop. Valid media snapshots update the
+panel; a four-second heartbeat timeout clears computer state. Music panel updates
+are limited to five per second, using the existing strip buffer. The selected
+mood remains stored while music temporarily drives dancing, including during Nap.
+No new framebuffers or repeated allocations are introduced.
 
 ### companion
 
