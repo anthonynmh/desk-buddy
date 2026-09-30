@@ -4,6 +4,7 @@
 #include "Runtime.h"
 #include "../hardware/rgb_lcd_port.h"
 #include "../hardware/gt911.h"
+#include "../hardware/WifiLink.h"
 #include "../companion/Interaction.h"
 #include "../graphics/Scene.h"
 #include "../graphics/Mascot.h"
@@ -12,6 +13,11 @@ namespace desk_buddy {
 static esp_lcd_panel_handle_t panel = nullptr;
 static uint16_t *actor = nullptr, *strip = nullptr;
 static pip::Interaction ui;
+static pip::MediaLink mediaLink;
+static WifiLink wifi;
+static bool musicDirty = false;
+static bool networkWasOpen = false;
+static uint32_t lastMusicDraw = 0;
 static uint32_t lastTouch = 0, lastFrame = 0, lastReport = 0, frames = 0;
 static uint64_t drawUs = 0, submitUs = 0;
 static constexpr int STRIP_ROWS = 24;
@@ -21,16 +27,29 @@ static void halt(const char *message) {
         delay(1000);
 }
 static void drawRegion(int x, int y, int w, int h) {
+    const uint32_t drawAt = millis();
     for (int row = 0; row < h; row += STRIP_ROWS) {
         int rows = pip::imin(STRIP_ROWS, h - row);
         pip::Canvas c(strip, w, rows, x, y + row);
-        pip::scene(c, ui.state);
+        pip::State displayed = ui.state;
+        if (ui.seeking) {
+            displayed.media.position = ui.seekPosition;
+            displayed.media.playing = false;
+        }
+        pip::scene(c, displayed, drawAt);
         ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(panel, x, y + row, x + w, y + row + rows, strip));
         yield();
     }
 }
 static void controls() {
+    if (ui.state.network.open || networkWasOpen) {
+        drawRegion(0, 0, 1024, 600);
+        networkWasOpen = ui.state.network.open;
+        ui.dirty = false;
+        return;
+    }
     drawRegion(56, 124, 540, 28);
+    drawRegion(816, 30, 176, 34);
     drawRegion(56, 463, 540, 35);
     for (int i = 0; i < 4; i++) {
         const pip::Box &b = pip::buttons[i];
@@ -39,6 +58,7 @@ static void controls() {
     ui.dirty = false;
 }
 static void frame(uint32_t now) {
+    if (ui.state.network.open) return;
     uint32_t start = micros();
     pip::Canvas c(actor, pip::PW, pip::PH, pip::PX, pip::PY);
     pip::mascot(c, ui.state, now);
@@ -79,14 +99,29 @@ void begin() {
     lastReport = lastFrame = millis();
     frames = 0;
     drawUs = submitUs = 0;
+    wifi.begin(ui.state.network);
     Serial.println("Pip is ready. Tap, brush, or choose a mood.");
 }
 void update() {
     uint32_t now = millis();
+    if (wifi.update(ui.state.network, mediaLink, ui.state.media, ui.command, now)) {
+        musicDirty = true;
+        ui.dirty = true;
+    }
+    if (mediaLink.expire(ui.state.media, now)) {
+        musicDirty = true;
+        ui.dirty = true;
+    }
     if ((uint32_t)(now - lastTouch) >= 16) {
         lastTouch = now;
         touch_gt911_point_t p = touch_gt911_read_point(1);
         ui.sample(p.cnt > 0, p.x[0], p.y[0], now);
+    }
+    if (!ui.state.network.open && (musicDirty || ui.seeking || ui.state.media.playing) &&
+        uint32_t(now - lastMusicDraw) >= 200) {
+        drawRegion(640, 108, 352, 356);
+        lastMusicDraw = now;
+        musicDirty = false;
     }
     if (ui.dirty)
         controls();

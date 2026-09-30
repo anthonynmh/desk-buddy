@@ -8,7 +8,8 @@ namespace pip {
 inline void mascot(Canvas &c, const State &s, uint32_t now) {
     c.rect(PX, PY, PW, PH, STAGE);
     float t = now / 1000.f;
-    bool sleep = s.mode == NAP, play = s.mode == PLAY,
+    bool music = s.media.connected && s.media.playing;
+    bool sleep = s.mode == NAP && !music, play = s.mode == PLAY || music,
          happy = s.happy && uint32_t(now - s.happyAt) < 3500,
          wave = s.waving && uint32_t(now - s.waveAt) < 3200;
     float bob = sleep ? sinf(t * 1.5f) * 2 : (play ? -fabsf(sinf(t * 4)) * 14 : sinf(t * 2.2f) * 4);

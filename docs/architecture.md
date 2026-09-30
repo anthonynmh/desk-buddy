@@ -9,6 +9,13 @@ touch coordinates → companion/Interaction → companion/State → graphics →
 
 ## Modules
 
+The optional computer flow is `desktop/Start-DeskBuddyPublisher.ps1` -> local
+Wi-Fi HTTP -> `hardware/WifiLink.cpp` -> `companion/Media.h` -> state -> music
+panel and dance animation. Token-bound touch controls flow back through the
+same publisher. See [setup and protocol](computer.md). The Windows publisher
+owns Windows APIs; portable companion and graphics headers have no OS or Arduino
+dependencies.
+
 ### app
 
 `Runtime.h` exposes `desk_buddy::begin()` and `desk_buddy::update()` to the
@@ -20,6 +27,21 @@ the backlight. Do not initialize I2C twice.
 The loop polls touch every 16 ms, updates the mascot at intervals of at least
 40 ms, and prints performance statistics every five seconds. Animation uses
 elapsed time. These are scheduling targets, not measured LCD refresh rates.
+
+`WifiLink` stores Wi-Fi and publisher settings in NVS, reconnects to the saved
+2.4 GHz Wi-Fi network, polls an authenticated local HTTP endpoint once per
+second, and posts token-bound controls. It bounds HTTP timeouts and media payload
+lengths; missing publisher heartbeats clear computer state after four seconds.
+Music panel updates are limited to five per second, using the existing strip
+buffer. The selected mood remains stored while music temporarily drives dancing,
+including during Nap. No new framebuffers or repeated allocations are introduced.
+
+Opening Wi-Fi settings requests an asynchronous 2.4 GHz scan. The portable model
+keeps the strongest 12 distinct visible SSIDs in a fixed array; the dropdown
+pages through five entries at a time. Selecting a different SSID clears the
+password. Connection setup works independently of publisher pairing. Saved
+settings are kept separately from editable fields; only Connect/Save pairing
+apply them. Publisher HTTP polling pauses while editing to keep input responsive.
 
 ### companion
 

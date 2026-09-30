@@ -8,6 +8,8 @@
 *.elf
 *.bin
 *.map
+*.pdb
+*.lib
 __pycache__/
 .DS_Store
 Thumbs.db
