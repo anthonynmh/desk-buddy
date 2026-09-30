@@ -54,9 +54,19 @@ static void rendering() {
             state.mode = static_cast<Mode>(mode);
             state.waving = true;
             state.happy = (mode == 0);
+            state.media.connected = mode != 0;
+            state.media.available = mode >= 2;
+            state.media.playing = mode == 3;
+            state.media.canSeek = mode >= 2;
+            state.media.canToggle = mode >= 2;
+            state.media.duration = 240000;
+            state.media.position = 125000;
+            strcpy(state.media.title, "A very long title that should fit safely inside the music panel");
+            strcpy(state.media.artist, "Artist");
+            strcpy(state.media.album, "Album");
             std::vector<uint16_t> full(1024 * 600 + 2, guard);
             Canvas canvas(full.data() + 1, 1024, 600);
-            scene(canvas, state);
+            scene(canvas, state, now);
             mascot(canvas, state, now);
             assert(full.front() == guard && full.back() == guard);
 
@@ -71,17 +81,75 @@ static void rendering() {
             std::vector<uint16_t> strips(1024 * 600 + 2, guard);
             for (int y = 0; y < 600; y += 24) {
                 Canvas strip(strips.data() + 1 + y * 1024, 1024, std::min(24, 600 - y), 0, y);
-                scene(strip, state);
+                scene(strip, state, now);
             }
             Canvas all(strips.data() + 1, 1024, 600);
             mascot(all, state, now);
             assert(strips == full);
+
+            // Runtime updates just this panel, without touching mood buttons.
+            const int panelX = 640, panelY = 108, panelW = 352, panelH = 356;
+            std::vector<uint16_t> panel(panelW * panelH + 2, guard);
+            Canvas musicCanvas(panel.data() + 1, panelW, panelH, panelX, panelY);
+            scene(musicCanvas, state, now);
+            assert(panel.front() == guard && panel.back() == guard);
+            for (int row = 0; row < panelH; ++row)
+                for (int col = 0; col < panelW; ++col)
+                    assert(panel[1 + row * panelW + col] ==
+                           full[1 + (panelY + row) * 1024 + panelX + col]);
         }
     }
 }
 
+static bool packet(pip::MediaLink &link, pip::Media &media, const char *value, uint32_t now) {
+    bool accepted = false;
+    for (; *value; ++value) accepted = link.feed(*value, media, now) || accepted;
+    return accepted;
+}
+static void music() {
+    using namespace pip;
+    MediaLink link;
+    Interaction ui;
+    assert(packet(link, ui.state.media, "PIP1\t1\t1\t1\t1\t7\t1000\t200000\tSong\tArtist\tAlbum\n", 100));
+    assert(ui.state.media.playing && ui.state.media.elapsed(1100) == 2000);
+    assert(ui.state.media.elapsed(999999) == 200000);
+    assert(!packet(link, ui.state.media, "PIP1\t1\t1\t1\t1\t7\t200001\t200000\tBad\t\t\n", 200));
+    assert(!packet(link, ui.state.media, "PIP1\t1\t1\t1\t1\t4294967296\t0\t0\tBad\t\t\n", 200));
+    assert(strcmp(ui.state.media.title, "Song") == 0);
+    for (int i = 0; i < 400; ++i) link.feed('a', ui.state.media, 200);
+    assert(!link.feed('\n', ui.state.media, 200));
+    ui.select(NAP, 200);
+    ui.sample(true, seekBar.x, seekBar.y + 10, 300);
+    ui.sample(true, seekBar.x + seekBar.w + 50, seekBar.y, 316);
+    assert(ui.seekPosition == 200000 && ui.seeking);
+    ui.sample(false, 0, 0, 380);
+    assert(ui.down && !ui.command[0]);
+    ui.sample(false, 0, 0, 427);
+    assert(strcmp(ui.command, "PIP_SEEK\t7\t200000") == 0);
+    assert(ui.state.mode == NAP && ui.state.pets == 0);
+    ui.command[0] = 0;
+    ui.sample(true, seekBar.x + 10, seekBar.y, 500);
+    ui.state.media.token = 8; // Never seek into a different song on release.
+    ui.sample(false, 0, 0, 611);
+    assert(!ui.command[0]);
+    ui.sample(true, playbackButton.x + 10, playbackButton.y + 10, 700);
+    assert(strcmp(ui.command, "PIP_TOGGLE\t8") == 0);
+    ui.command[0] = 0;
+    ui.sample(false, 0, 0, 811);
+    assert(link.expire(ui.state.media, 4101));
+    assert(!ui.state.media.connected && !ui.state.media.playing && ui.state.mode == NAP);
+    ui.sample(true, seekBar.x + 10, seekBar.y, 4200);
+    ui.sample(false, 0, 0, 4311);
+    assert(!ui.command[0]);
+    assert(packet(link, ui.state.media, "PIP1\t0\t0\t0\t0\t9\t0\t0\t\t\t\n", 4400));
+    assert(ui.state.media.connected && !ui.state.media.available);
+    ui.state.media.receivedAt = 0xffffff00u;
+    assert(link.expire(ui.state.media, 4000)); // millis rollover.
+}
+
 int main() {
     gestures();
+    music();
     rendering();
     std::puts("Gesture and full/partial rendering checks passed.");
 }
