@@ -36,10 +36,16 @@ for later computer and application events.
 
    Use the IPv4 address under your connected Wi-Fi or Ethernet adapter, such as
    `192.168.1.25`. Do not use a Bluetooth, VPN, `127.0.0.1`, or IPv6 address.
-5. On Pip, tap **SET UP WI-FI** in the top-right corner. Enter the Wi-Fi name,
-   Wi-Fi password, publisher IPv4 address, pairing key, and port `8791`. Tap
-   **Save + connect**. The keyboard cycles `ABC` → `123` → `abc` → `#+=`;
-   it also has space, period, dash, and delete.
+5. On Pip, tap **SET UP WI-FI** in the top-right corner. Pip scans automatically.
+   Tap **Nearby Wi-Fi**, select your network, enter its password, and tap
+   **Connect**. Open networks do not need a password. **Refresh** scans again;
+   **Previous/Next** page through up to 12 networks, strongest first. Hidden
+   networks are not listed. Wi-Fi connects without publisher details.
+   Then open **Computer pairing**, enter the publisher IPv4 address, pairing
+   key and port `8791`, and tap **Save pairing**. **Back** closes the dropdown,
+   returns from pairing to Wi-Fi, or returns from Wi-Fi to Pip. Unsaved edits
+   do not change the active connection. The keyboard cycles
+   `ABC` → `123` → `abc` → `#+=`; it also has space, period, dash, and delete.
 6. If Windows Defender Firewall asks, allow the publisher on **Private**
    networks. If no prompt appears, run the installed publisher once in a visible
    PowerShell window, then allow it:

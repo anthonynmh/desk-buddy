@@ -8,6 +8,8 @@ Wi-Fi connection to the installable Windows Desk Buddy Publisher connects
 Spotify playback to Pip: dance while playing, show the song, artist and album,
 and touch to seek or play/pause.
 See [computer connection](docs/computer.md) for setup and current limits.
+Pip scans nearby Wi-Fi networks in settings; select one, enter its password,
+and connect before configuring the Windows publisher.
 
 ![Pip preview](docs/assets/Preview.png)
 

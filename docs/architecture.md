@@ -36,6 +36,13 @@ Music panel updates are limited to five per second, using the existing strip
 buffer. The selected mood remains stored while music temporarily drives dancing,
 including during Nap. No new framebuffers or repeated allocations are introduced.
 
+Opening Wi-Fi settings requests an asynchronous 2.4 GHz scan. The portable model
+keeps the strongest 12 distinct visible SSIDs in a fixed array; the dropdown
+pages through five entries at a time. Selecting a different SSID clears the
+password. Connection setup works independently of publisher pairing. Saved
+settings are kept separately from editable fields; only Connect/Save pairing
+apply them. Publisher HTTP polling pauses while editing to keep input responsive.
+
 ### companion
 
 `State.h` defines the four moods and transient wave, happiness, gaze, message,

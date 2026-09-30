@@ -33,6 +33,9 @@ Media checks cover malformed/oversized packets, numeric overflow, reconnect and
 timeout including clock rollover, seek capture and release debounce, clamping,
 track changes during a drag, and play/pause commands. Wi-Fi settings checks cover
 field selection, upper/lower/symbol keyboard modes, validation, save and forget.
+They also check network deduplication and signal order, bounded scan lists,
+selection/password clearing, open networks, held Back presses, and full/strip
+rendering of setup, scan, dropdown, and computer pairing pages.
 Rendering includes connected, paused and playing states, long metadata, the Wi-Fi
 setup view, and partial panel painting.
 
